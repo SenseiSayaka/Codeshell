@@ -14,9 +14,9 @@
 .global _start
 .type _start, @function
 _start:
-	sti
 	movl $stack_top, %esp
 	call kernel_main
+	sti
 	cli
 	hlt
 .Lhang:
