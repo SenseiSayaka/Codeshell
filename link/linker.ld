@@ -1,33 +1,25 @@
 ENTRY(_start)
 
-SECTIONS
-{
-	/* 1 MB sections */
-	. = 1M; 
+SECTIONS {
+	 . = 1M;
 
-	/* Multiboot Header */
-	.text BLOCK(4K) : ALIGN(4K) 
-	{
-		*(.multiboot)
-		*(.text)
-	}
+	 .text BLOCK(4K) : ALIGN(4K) {
+	       *(.multiboot)
+	       *(.text)
+	 }
 
-	/* Read-only data. */
-	.rodata BLOCK(4K) : ALIGN(4K)
-	{
-		*(.rodata)
-	}
+	 .rodata BLOCK(4K) : ALIGN(4K) {
+		 *(.rodata)
+	 }
 
-	/* Read-write data (initialized) */
-	.data BLOCK(4K) : ALIGN(4K)
-	{
-		*(.data)
-	}
+	 .data BLOCK(4K) : ALIGN(4K) {
+	       *(.data)
+	 }
 
-	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : ALIGN(4K)
-	{
-		*(COMMON)
-		*(.bss)
-	}
+	 .bss BLOCK(4K) : ALIGN(4K) {
+	      *(COMMON)
+	      *(.bss)
+	      *(.bootstrap_stack)
+	 }
+	 end = .; _end = .; __end = .;
 }

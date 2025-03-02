@@ -1,5 +1,5 @@
 #include <stdint.h>
-
+#include "../interrupts/common.h"
 #define KBC_STATUS   0x64
 #define KBC_EA       0x60
 
@@ -8,15 +8,15 @@ uint8_t keyboardActivePolling_lastScanCode = 0;
 
 // -- internal funcitons
 
-static inline unsigned char inportb (unsigned short _port) {
-  unsigned char rv;
-  __asm__ __volatile__ ("inb %1, %0" : "=a" (rv) : "dN" (_port));
-  return rv;
-}
+// static inline unsigned char inportb (unsigned short _port) {
+//   unsigned char rv;
+//   __asm__ __volatile__ ("inb %1, %0" : "=a" (rv) : "dN" (_port));
+//   return rv;
+// }
 
-static inline void outportb (unsigned short _port, unsigned char _data) {
-  __asm__ __volatile__ ("outb %1, %0" : : "dN" (_port), "a" (_data));
-}
+// static inline void outportb (unsigned short _port, unsigned char _data) {
+//   __asm__ __volatile__ ("outb %1, %0" : : "dN" (_port), "a" (_data));
+// }
 
 void delay() {
   for(int i = 0; i < 1000000; i++) { // accurate time delay would require CPU ClockCycles/USec conversion

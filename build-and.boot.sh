@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 BASEDIR=$(cd `dirname $0` && pwd)
-CC=${BASEDIR}/dependencies/out/path/bin/i686-elf-g++ # path to our cross-compiler build from my last blog post
+CC=${BASEDIR}/dependencies/out/path/bin/i686-elf-gcc # path to our cross-compiler build from my last blog post
 AS=${BASEDIR}/dependencies/out/path/bin/i686-elf-as
 
 echo "[ ] Install dependencies"
-sudo apt -y install nasm xorriso qemu-system-i386
+# sudo apt -y install nasm xorriso qemu-system-i386
 
 mkdir -p ${BASEDIR}/build
 cd ${BASEDIR}/build
@@ -13,11 +13,14 @@ cd ${BASEDIR}/build
 echo "[ ] Build boot code"
 ${AS} --32 ../boot/boot.s -o boot.o
 
+echo "[ ] Build interrupt code"
+${AS} ../interrupts/interrupt.s -o interrupt.o
+
 echo "[ ] Compile Kernel"
-${CC} -c ../kernel/kernel.cpp -o kernel.o -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti
+${CC} -c ../kernel/kernel.c -o kernel.o -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti
 
 echo "[ ] Link"
-${CC} -T ../link/linker.ld -o codeshell.bin -ffreestanding -O2 -nostdlib boot.o kernel.o -lgcc
+${CC} -T ../link/linker.ld -o codeshell.bin -ffreestanding -O2 -nostdlib boot.o interrupt.o kernel.o -lgcc
 
 echo "[ ] Check is x86"
 grub-file --is-x86-multiboot codeshell.bin

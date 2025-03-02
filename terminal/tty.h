@@ -1,3 +1,5 @@
+#ifndef TTY_H
+#define TTY_H
 // === Terminal Code for writting on the screen ===
 #include <stdint.h>
 #include <stddef.h>
@@ -84,3 +86,4 @@ void terminal_write(const char* data, size_t size) {
 void terminal_writestring(const char* data) {
   terminal_write(data, strlen(data));
 }
+#endif /* TTY_H */
