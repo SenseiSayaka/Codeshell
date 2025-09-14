@@ -1,0 +1,8 @@
+*.iso
+isodir/
+sysroot/
+old/
+build/
+out/
+dependencies/
+old_src/
