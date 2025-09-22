@@ -12,7 +12,7 @@ void set_screen_color(uint8_t color) {
 }
 
 void main(void) {
-  print("hello");
+  print("DIA DELICIA");
   set_screen_color(0x1F);
   //print("#######welcome to codeshell######\n");
   //print("login:");

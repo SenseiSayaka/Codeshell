@@ -2,12 +2,15 @@ all:
 	## bootloader ###
 	nasm -f elf32 boot.s -o build/boot.o
 	nasm -f elf32 gdt.s -o build/gdts.o
+	nasm -f elf32 idt.s -o build/idt.o
 	### Kernel #####
 	gcc -m32 -fno-stack-protector -fno-builtin -c kernel.c -o build/kernel.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c vga.c -o build/vga.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c gdt.c -o build/gdt.o
+	gcc -m32 -fno-stack-protector -fno-builtin -c idt.c -o build/idts.o
+	gcc -m32 -fno-stack-protector -fno-builtin -c util.c -o build/util.o
 	### else #####
-	ld -m elf_i386 -T linker.ld -o kernel build/boot.o build/kernel.o build/vga.o build/gdt.o build/gdts.o
+	ld -m elf_i386 -T linker.ld -o kernel build/boot.o build/kernel.o build/vga.o build/gdt.o build/gdts.o build/idt.o build/idts.o build/util.o
 	mv kernel codeshell/boot/kernel
 	grub-mkrescue -o build/codeshell.iso codeshell/
 	qemu-system-i386 build/codeshell.iso
@@ -18,4 +21,7 @@ clear:
 	rm build/kernel.o
 	rm build/vga.o
 	rm build/gdt.o
+	rm build/idt.o
+	rm build/idts.o
+	rm build/util.o
 	rm build/codeshell.iso
