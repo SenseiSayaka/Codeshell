@@ -1,5 +1,5 @@
 #include "vga.h"
-
+#include "timer.h"
 void main(void);
 void set_screen_color(uint8_t color);
 

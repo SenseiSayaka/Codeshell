@@ -9,8 +9,9 @@ all:
 	gcc -m32 -fno-stack-protector -fno-builtin -c gdt.c -o build/gdt.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c idt.c -o build/idts.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c util.c -o build/util.o
+	gcc -m32 -fno-stack-protector -fno-builtin -c timer.c -o build/timer.o
 	### else #####
-	ld -m elf_i386 -T linker.ld -o kernel build/boot.o build/kernel.o build/vga.o build/gdt.o build/gdts.o build/idt.o build/idts.o build/util.o
+	ld -m elf_i386 -T linker.ld -o kernel build/boot.o build/kernel.o build/vga.o build/gdt.o build/gdts.o build/idt.o build/idts.o build/util.o build/timer.o
 	mv kernel codeshell/boot/kernel
 	grub-mkrescue -o build/codeshell.iso codeshell/
 	qemu-system-i386 build/codeshell.iso
@@ -24,4 +25,5 @@ clear:
 	rm build/idt.o
 	rm build/idts.o
 	rm build/util.o
+	rm build/timer.o
 	rm build/codeshell.iso
