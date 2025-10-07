@@ -1,6 +1,9 @@
 #include "vga.h"
+#include "gdt.h"
+#include "idt.h"
 #include "timer.h"
-void main(void);
+#include "util.h"
+void kmain(void);
 void set_screen_color(uint8_t color);
 
 void set_screen_color(uint8_t color) {
@@ -11,9 +14,13 @@ void set_screen_color(uint8_t color) {
     }
 }
 
-void main(void) {
-  print("DIA DELICIA");
+void kmain(void) {
+  initGdt();
+  print("GDT is done\r\n");
+  initIdt();
+  print("IDT is done\r\n");
+  initTimer();
+  print("Timer is done\r\n"); 
   set_screen_color(0x1F);
-  //print("#######welcome to codeshell######\n");
-  //print("login:");
+  for(;;);
 }

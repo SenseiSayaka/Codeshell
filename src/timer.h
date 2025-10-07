@@ -1,3 +1,2 @@
-void timer();
-void onIrq0(struct regs* reg);
-
+void initTimer();
+void onIrq0(struct InterruptRegisters *regs);

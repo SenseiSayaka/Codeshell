@@ -1,18 +1,14 @@
 #include "stdint.h"
 #include "util.h"
 
-void memset(void *dest, char val, uint32_t count);
-void portb(uint16_t port, uint8_t value);
-
-void memset(void *dest, char val, uint32_t count) {
-    char *temp = (char *)dest;
-    for(;count != 0; count--) {
-       *temp++ = val;
+void memset(void *dest, char val, uint32_t count){
+    char *temp = (char*) dest;
+    for (; count != 0; count --){
+        *temp++ = val;
     }
-};
 
-void portb(uint16_t port, uint8_t value)
-{
-	asm volatile ("outb %0, %1" : : "a"(value), "Nd" (port));
+}
 
-};
+void outPortB(uint16_t Port, uint8_t Value){
+    asm volatile ("outb %1, %0" : : "dN" (Port), "a" (Value));
+}

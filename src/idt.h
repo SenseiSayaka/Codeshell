@@ -1,30 +1,21 @@
-struct idt_e
-{
-	uint16_t base_low;
-	uint16_t sel;
-	uint8_t always0;
-	uint8_t flags;
-	uint16_t base_hight;
-
-
+struct idt_entry_struct{
+    uint16_t base_low;
+    uint16_t sel;
+    uint8_t always0;
+    uint8_t flags;
+    uint16_t base_high;
 }__attribute__((packed));
 
-
-struct idt_ptr
-{
-	uint16_t limit;
-	uint32_t base;
-
+struct idt_ptr_struct{
+    uint16_t limit;
+    uint32_t base;
 }__attribute__((packed));
 
-void init_idt();
-void set_idt_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
+void initIdt();
+void setIdtGate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
 
-void isr_handler(struct regs* reg);
-void irq_install_handler (int irq, void (*handler)(struct regs *r));
-void irq_uninstall_handler(int irq);
+void isr_handler(struct InterruptRegisters* regs);
 
-void irq_handler(struct regs* regs);
 extern void isr0();
 extern void isr1();
 extern void isr2();
@@ -57,9 +48,9 @@ extern void isr28();
 extern void isr29();
 extern void isr30();
 extern void isr31();
+
 extern void isr128();
 extern void isr177();
-
 
 extern void irq0();
 extern void irq1();
