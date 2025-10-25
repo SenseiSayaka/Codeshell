@@ -24,9 +24,9 @@ void newLine(){
         line++;
         column = 0;
     }
-    else{
-      scrollUp();
-      column = 0;
+    else {
+     	scrollUp();
+      	column = 0;
     }
 }
 
@@ -42,6 +42,7 @@ void scrollUp(){
     }
 }
 
+
 void print(const char* s){
     while(*s){
         switch(*s){
@@ -52,7 +53,7 @@ void print(const char* s){
                 column = 0;
                 break;
             case '\b':
-                if(column == 8) {
+                if(column == 4) {
                     vga[line * width + (++column)] = ' ' | currentColor;
                     break;
                 }

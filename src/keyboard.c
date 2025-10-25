@@ -3,6 +3,7 @@
 #include "idt.h"
 #include "stdlib/stdio.h"
 #include "keyboard.h"
+#include "vga.h"
 
 bool capsOn;
 bool capsLock;
@@ -71,7 +72,7 @@ void keyboardHandler(struct InterruptRegisters *regs){
 
     switch(scanCode){
         case 1:
-        case 29:
+        case 29:	
         case 56:
         case 59:
         case 60:
@@ -103,6 +104,10 @@ void keyboardHandler(struct InterruptRegisters *regs){
             break;
         default:
             if (press == 0){
+		    if(lowercase[scanCode] == '\n'){
+			  print("\ncsh>");
+			  break;			  
+		    }
                 if (capsOn || capsLock){
                     printf("%c", uppercase[scanCode]);
                 }else{
