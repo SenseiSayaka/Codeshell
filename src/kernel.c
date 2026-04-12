@@ -23,9 +23,10 @@ void kmain(void) {
   initTimer();
   initKeyboard();
   print("##########################\n");
-  print("#        Codeshell       #\n");
+  print("#        Psalm 5:9-13    #\n");
   print("##########################\n");
   print("csh>"); 
+  setLineStart();
   set_screen_color(0x1F);
   for(;;);
 }

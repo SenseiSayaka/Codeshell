@@ -1,6 +1,5 @@
 #pragma once
-
-
+#include "stdint.h"
 #define COLOR8_BLACK 0
 #define COLOR8_BLUE 1
 #define COLOR8_GREEN 2
@@ -21,7 +20,17 @@
 #define width 80
 #define height 25
 
+
 void print(const char* s);
 void scrollUp();
 void newLine();
 void Reset();
+
+
+// cursor
+void setLineStart();
+void moveCursorLeft();
+void moveCursorRight();
+void putCharAt(char c, uint16_t col, uint16_t ln);  // записать символ без сдвига курсора
+void setCursorPos(uint16_t col, uint16_t ln);        // установить позицию курсора;
+void updateHardwareCursor();
