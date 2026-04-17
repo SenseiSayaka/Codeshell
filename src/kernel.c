@@ -23,7 +23,7 @@ void kmain(void) {
   initTimer();
   initKeyboard();
   print("##########################\n");
-  print("#        Psalm 5:9-13    #\n");
+  print("#        CODESHELL       #\n");
   print("##########################\n");
   print("csh>"); 
   setLineStart();

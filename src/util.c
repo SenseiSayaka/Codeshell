@@ -19,3 +19,43 @@ char inPortB(uint16_t port){
     asm volatile("inb %1, %0": "=a"(rv):"dN"(port));
     return rv;
 }
+
+uint32_t k_strlen(const char* s)
+{
+	uint32_t len = 0;
+	while(*s++) len++;
+	return len;
+}
+int k_strcmp(const char* a, const char* b)
+{
+	while(*a && *a == *b)
+	{
+		a++;
+		b++;
+	}
+	return (unsigned char)*a - (unsigned char)*b;
+}
+
+int k_strncmp(const char* a, const char* b, uint32_t n)
+{
+	while(n && *a && *a == *b)
+	{
+		a++;
+		b++;
+		n--;
+	}
+	if(n == 0)
+		return 0;
+	return (unsigned char)*a - (unsigned char)*b;
+}
+
+char* k_strchr(const char* s, char c)
+{
+	while(*s)
+	{
+		if(*s == c)
+			return (char*)s;
+		s++;
+	}
+	return 0;
+}

@@ -12,8 +12,9 @@ all:
 	gcc -m32 -fno-stack-protector -fno-builtin -c timer.c -o build/timer.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c stdlib/stdio.c -o build/stdio.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c keyboard.c -o build/keyboard.o
+	gcc -m32 -fno-stack-protector -fno-builtin -c shell.c -o build/shell.o
 	### else #####
-	ld -m elf_i386 -T linker.ld -o kernel build/boot.o build/kernel.o build/vga.o build/gdt.o build/gdts.o build/util.o build/idt.o build/idts.o build/timer.o build/keyboard.o build/stdio.o
+	ld -m elf_i386 -T linker.ld -o kernel build/boot.o build/kernel.o build/vga.o build/gdt.o build/gdts.o build/util.o build/idt.o build/idts.o build/timer.o build/keyboard.o build/stdio.o build/shell.o
 	mv kernel codeshell/boot/kernel
 	grub-mkrescue -o build/codeshell.iso codeshell/
 	qemu-system-i386 build/codeshell.iso

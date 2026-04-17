@@ -4,7 +4,7 @@
 #include "stdlib/stdio.h"
 #include "keyboard.h"
 #include "vga.h"
-
+#include "shell.h"
 bool capsOn;
 bool capsLock;
 static bool extendedKey = false;
@@ -165,9 +165,21 @@ void keyboardHandler(struct InterruptRegisters *regs){
             if (key == '\n') {
                 // сбросить буфер и напечатать новый промпт
                 inputBuf[inputLen] = '\0';
-                inputLen = 0;
+                
+		bool is_clear = (k_strcmp(inputBuf, "clr") == 0);
+		shell_exec(inputBuf);
+		
+		
+		inputLen = 0;
                 inputPos = 0;
-                print("\ncsh>");
+              	if(is_clear)
+		{
+			print("csh>");
+		}
+		else
+		{
+			print("csh>");
+		}
                 setLineStart();
 
             } else if (key == '\b') {
