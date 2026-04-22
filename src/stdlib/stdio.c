@@ -3,7 +3,8 @@
 #include "../vga.h"
 
 void putc(char c){
-    print(&c);
+    char buf[2] = {c, '\0'};
+    print(buf);
 }
 
 void puts(const char* s){

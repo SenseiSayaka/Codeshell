@@ -3,12 +3,13 @@
 #include "idt.h"
 #include "vga.h"
 #include "timer.h"
-
+#include "task.h"
 uint64_t ticks;
 const uint32_t freq = 100;
 
 void onIrq0(struct InterruptRegisters *regs){
     ticks += 1;
+    schedule();
 }
 
 void initTimer(){

@@ -5,7 +5,7 @@
 uint16_t column = 0;
 uint16_t line = 0;
 uint16_t* const vga = (uint16_t* const) 0xB8000;
-const uint16_t defaultColor = (COLOR8_WHITE << 8) | (COLOR8_BLUE << 12);
+const uint16_t defaultColor = (COLOR8_WHITE << 8) | (COLOR8_BLACK << 0);
 uint16_t currentColor = defaultColor;
 void putCharAt(char c, uint16_t col, uint16_t ln) {
     vga[ln * width + col] = c | currentColor;

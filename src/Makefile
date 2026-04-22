@@ -3,6 +3,7 @@ all:
 	nasm -f elf32 boot.s -o build/boot.o
 	nasm -f elf32 gdt.s -o build/gdts.o
 	nasm -f elf32 idt.s -o build/idt.o
+	nasm -f elf32 task.s -o build/task.o
 	### Kernel #####
 	gcc -m32 -fno-stack-protector -fno-builtin -c kernel.c -o build/kernel.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c vga.c -o build/vga.o
@@ -13,8 +14,17 @@ all:
 	gcc -m32 -fno-stack-protector -fno-builtin -c stdlib/stdio.c -o build/stdio.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c keyboard.c -o build/keyboard.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c shell.c -o build/shell.o
-	### else #####
-	ld -m elf_i386 -T linker.ld -o kernel build/boot.o build/kernel.o build/vga.o build/gdt.o build/gdts.o build/util.o build/idt.o build/idts.o build/timer.o build/keyboard.o build/stdio.o build/shell.o
+	gcc -m32 -fno-stack-protector -fno-builtin -c kmalloc.c -o build/kmalloc.o
+	gcc -m32 -fno-stack-protector -fno-builtin -c fat12.c -o build/fat12.o
+	gcc -m32 -fno-stack-protector -fno-builtin -c task.c -o build/taskc.o
+	gcc -m32 -fno-stack-protector -fno-builtin -c pmm.c -o build/pmm.o
+	### filesystem imgae ###
+	dd if=/dev/zero of=build/fs.img bs=512 count=2880
+	mkfs.fat -F 12 build/fs.img	
+	mcopy -i build/fs.img fs/motd.txt ::MOTD.TXT
+	cp build/fs.img codeshell/boot/fs.img
+	### link and run #####
+	ld -m elf_i386 -T linker.ld -o kernel build/boot.o build/kernel.o build/vga.o build/gdt.o build/gdts.o build/util.o build/idt.o build/idts.o build/timer.o build/keyboard.o build/stdio.o build/shell.o build/kmalloc.o build/fat12.o build/task.o build/taskc.o build/pmm.o
 	mv kernel codeshell/boot/kernel
 	grub-mkrescue -o build/codeshell.iso codeshell/
 	qemu-system-i386 build/codeshell.iso

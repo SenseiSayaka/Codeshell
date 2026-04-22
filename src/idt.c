@@ -157,6 +157,11 @@ void irq_uninstall_handler(int irq){
 }
 
 void irq_handler(struct InterruptRegisters* regs){
+	if(regs->int_no >= 40){
+		outPortB(0xA0, 0x20);
+	}
+	outPortB(0x20, 0x20);
+    
     void (*handler)(struct InterruptRegisters *regs);
 
     handler = irq_routines[regs->int_no - 32];
@@ -164,10 +169,4 @@ void irq_handler(struct InterruptRegisters* regs){
     if (handler){
         handler(regs);
     }
-
-    if (regs->int_no >= 40){
-        outPortB(0xA0, 0x20);
-    }
-
-    outPortB(0x20,0x20);
 }
