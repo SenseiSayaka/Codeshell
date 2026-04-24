@@ -2,6 +2,7 @@
 #include "util.h"
 #include "vga.h"
 #include "idt.h"
+#include "syscall.h"
 
 struct idt_entry_struct idt_entries[256];
 struct idt_ptr_struct idt_ptr;
@@ -82,7 +83,7 @@ void initIdt(){
     setIdtGate(47, (uint32_t)irq15, 0x08, 0x8E);
 
 
-    setIdtGate(128, (uint32_t)isr128, 0x08, 0x8E); //System calls
+    setIdtGate(128, (uint32_t)isr128, 0x08, 0xEE); //System calls
     setIdtGate(177, (uint32_t)isr177, 0x08, 0x8E); //System calls
 
     idt_flush((uint32_t)&idt_ptr);
@@ -135,7 +136,11 @@ unsigned char* exception_messages[] = {
 };
 
 void isr_handler(struct InterruptRegisters* regs){
-    if (regs->int_no < 32){
+	if(regs->int_no==128){
+		syscall_handler(regs);
+		return;
+	}
+	if (regs->int_no < 32){
         print(exception_messages[regs->int_no]);
         print("\n");
         print("Exception! System Halted\n");

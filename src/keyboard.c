@@ -3,6 +3,7 @@
 #include "idt.h"
 #include "stdlib/stdio.h"
 #include "keyboard.h"
+#include "kmalloc.h"
 #include "vga.h"
 #include "shell.h"
 #include "fat12.h"

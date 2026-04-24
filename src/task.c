@@ -2,7 +2,9 @@
 #include "kmalloc.h"
 #include "util.h"
 #include "stdlib/stdio.h"
-
+#include "paging.h"
+#include "pmm.h"
+#include "gdt.h" 
 static Task tasks[MAX_TASKS];
 static int task_count=0;
 static int current_task=0;
@@ -12,6 +14,9 @@ void scheduler_lock(){ scheduler_locked=1; }
 void scheduler_unlock(){ scheduler_locked=0; }
 extern void task_switch_asm(uint32_t* old_esp, uint32_t new_esp);
 static void(*task_entry_points[MAX_TASKS])()={0};
+//user stack
+#define USER_STACK_VIRT 0xBFFFF000
+#define USER_STACK_SIZE 4096
 void tasks_init(){
 	memset(tasks, 0, sizeof(tasks));
 	//task 0 - it's kernel, alredy running
@@ -80,11 +85,59 @@ void schedule(){
 	tasks[prev].state=TASK_READY;
 	tasks[next].state=TASK_RUNNING;
 	current_task=next;
-	task_switch_asm(&tasks[prev].esp,tasks[next].esp);
+	if(tasks[next].stack != 0) {
+        	tss_set_kernel_stack((uint32_t)tasks[next].stack+TASK_STACK_SIZE);
+    	}
+	if(tasks[next].page_dir!=0){
+		paging_switch(tasks[next].page_dir);
+	}else{
+		extern uint32_t kernel_dir_phys;
+		paging_switch(kernel_dir_phys);
+	}
+	task_switch_asm(&tasks[prev].esp, tasks[next].esp);
+}
+int task_create_user(const char* name,uint32_t entry,uint32_t page_dir){
+	if(task_count>=MAX_TASKS)return -1;
+	//allocate physical page to user stack
+	uint32_t stack_phys=pmm_alloc();
+	if(!stack_phys)return -1;
+	paging_map(page_dir,
+			USER_STACK_VIRT, stack_phys,
+			PAGE_PRESENT|PAGE_WRITABLE|PAGE_USER);
+	//kernel stack to process interrupts/syscall
+	uint32_t* kstack=(uint32_t*)k_malloc(TASK_STACK_SIZE);
+	if(!kstack){ pmm_free(stack_phys); return -1; }
+	//init frame for IRET in ring3
+	//[ss][esp][eflags][cs][eip]
+	uint32_t* sp=kstack+TASK_STACK_SIZE/4;
+	*(--sp)=0x23;
+	*(--sp)=USER_STACK_VIRT+4092;
+	*(--sp)=0x202;
+	*(--sp)=0x1B;
+	*(--sp)=entry;
+	//then callee-szved for task_switch_asm
+	extern void task_usermode_enter();
+	*(--sp)=(uint32_t)task_usermode_enter;
+	*(--sp)=0;
+	*(--sp)=0;
+	*(--sp)=0;
+	*(--sp)=0;
+	int id=task_count++;
+	tasks[id].esp=(uint32_t)sp;
+	tasks[id].stack=kstack;
+	tasks[id].state=TASK_READY;
+	tasks[id].page_dir=page_dir;
+	uint32_t i=0;
+	while(name[i]&&i<31){ tasks[id].name[i]=name[i];i++; }
+	tasks[id].name[i]='\0';
+	return id;
 }
 void task_exit(){
 	tasks[current_task].state=TASK_DEAD;
 	schedule();
 	for(;;);
+}
+int get_current_task_id(){
+	return current_task;
 }
 

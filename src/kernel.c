@@ -10,6 +10,8 @@
 #include "fat12.h"
 #include "task.h"
 #include "pmm.h"
+#include "paging.h"
+#include "syscall.h"
 void kmain(MultibootInfo* mbi);
 void set_screen_color(uint8_t color);
 
@@ -59,6 +61,8 @@ void kmain(MultibootInfo* mbi) {
   }else{
 	  pmm_init(32*1024); //fallback: 32MB
   }
+  paging_init();
+  syscall_init();
   printf("heap base: 0x%x\n", heap_base);
   task_create("counter",task_counter);
     uint8_t* motd = (uint8_t*) k_malloc(512);

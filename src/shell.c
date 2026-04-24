@@ -1,20 +1,27 @@
 #include "shell.h"
 #include "vga.h"
 #include "util.h"
+#include "task.h"
 #include "stdlib/stdio.h"
 #include "keyboard.h"
 #include "kmalloc.h"
 #include "fat12.h"
 #include "pmm.h"
+#include "elf.h"
+
 static const char* help_text =
 	"Commands:\n"
+	"  ---------------------------------------------------------------\n"
 	"  info			- show this message\n"
 	"  clr			- clear the screen\n"
 	"  echo[text]   	- print text\n"
 	"  meminfo		- debug heap\n"
 	"  fsinfo        - filesystem debug heap\n"
+	"  pageinfo		- informations of free or used pages\n"
 	"  ls            - print list of files\n"
-	"  cat           - reading and print content of file\n";
+	"  cat           - reading and print content of file\n"
+	"  run                  - run ELF binary program\n"
+	"  --------------------------------------------------------------\n";
 
 static const char* skip_spaces(const char* s)
 {
@@ -57,6 +64,32 @@ void shell_exec(const char* input)
 				pmm_used_pages(), pmm_used_pages()*4);
 		printf("pages free: %d (%d KB)\n",
 				pmm_free_pages(), pmm_free_pages()*4);
+	}else if(k_strncmp(input, "run", cmd_len)==0&&cmd_len==3){
+		const char* filename=skip_spaces(input+3);
+		if(*filename=='\0'){
+			print("\nusage: run FILENAME\n");
+		}else{
+			//read ELF file from FAT12
+			uint8_t* buf=(uint8_t*)k_malloc(64*1024);//64KB buffer
+				if(!buf){
+					print("\nout of memory\n");
+				}else{
+					int bytes=fat12_read(filename, buf, 64*1024);
+					if(bytes<0){
+						print("\nfile not found\n");
+					}else{
+						print("\n");
+						ElfLoadResult res=elf_load(buf,bytes);
+						if(res.error!=0){
+							print("elf load failed.\n");
+						}else{
+							printf("elf loaded, entry=0x%x\n", res.entry);
+							task_create_user(filename, res.entry, res.page_dir);
+						}
+					}
+					k_free(buf);
+				}
+		}
 	}
 	else if (k_strncmp(input, "ls", cmd_len) == 0 && cmd_len == 2) {
 	    Fat12File* files = (Fat12File*) k_malloc(sizeof(Fat12File) * FAT12_MAX_FILES);

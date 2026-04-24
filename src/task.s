@@ -15,4 +15,6 @@ task_switch_asm:
 	POP ebx
 	POP ebp
 	RET
-	
+global task_usermode_enter
+task_usermode_enter:
+	IRET
