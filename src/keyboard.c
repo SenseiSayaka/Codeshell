@@ -36,22 +36,18 @@ static int history_count = 0;
 static int history_pos = -1;
 static char saved_input[INPUT_BUF_SIZE];
 static uint16_t saved_len = 0;
-
-
 static void bufToScreen(uint16_t pos, uint16_t *col, uint16_t *ln) {
     uint16_t abs = startCol + pos;
     *ln  = startLine + abs / width;
     *col = abs % width;
 }
-
-// перерисовать буфер начиная с позиции from и стереть символ после конца
 static void redrawFrom(uint16_t from) {
     uint16_t col, ln;
     for (uint16_t i = from; i < inputLen; i++) {
         bufToScreen(i, &col, &ln);
         putCharAt(inputBuf[i], col, ln);
     }
-    // стереть символ, который был в конце (после удаления)
+    
     bufToScreen(inputLen, &col, &ln);
     putCharAt(' ', col, ln);
 }
@@ -96,10 +92,10 @@ static void load_history_entry(const char* entry)
 	bufToScreen(inputPos, &col, &ln);
 	setCursorPos(col, ln);
 }
-static const char* commands[]={
-	"info", "clr", "echo", "meminfo", "fsinfo", "ls", "cat", 0
+static const char* commands[] = {
+    "info", "clr", "echo", "meminfo", "fsinfo",
+    "pageinfo", "diskinfo", "ls", "cat", "run", 0
 };
-
 static int find_completions(const char* prefix, uint32_t prefix_len,
 		char matches[][64], int max_matches){
 	int count = 0;

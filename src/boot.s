@@ -21,5 +21,5 @@ HaltKernel:
     JMP HaltKernel
 
 section .bss
-RESB 8192
+RESB 65536
 stack_space:

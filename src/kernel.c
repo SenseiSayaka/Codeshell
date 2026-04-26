@@ -12,7 +12,10 @@
 #include "pmm.h"
 #include "paging.h"
 #include "syscall.h"
+#include "ata.h"
+#include "fat12_ata.h"
 void kmain(MultibootInfo* mbi);
+static uint8_t diag_sector[512];
 void set_screen_color(uint8_t color);
 
 void set_screen_color(uint8_t color) {
@@ -63,11 +66,13 @@ void kmain(MultibootInfo* mbi) {
   }
   paging_init();
   syscall_init();
+  ata_init();
+  fat12_ata_init();
   printf("heap base: 0x%x\n", heap_base);
   task_create("counter",task_counter);
     uint8_t* motd = (uint8_t*) k_malloc(512);
     if (motd) {
-        int bytes = fat12_read("MOTD.TXT", motd, 511);
+        int bytes = fat12_ata_read("MOTD.TXT", motd, 511);
         if (bytes > 0) {
             motd[bytes] = '\0';
             print((char*)motd);

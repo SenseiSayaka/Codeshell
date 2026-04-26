@@ -4,7 +4,8 @@
 #include "stdlib/stdio.h"
 #include "paging.h"
 #include "pmm.h"
-#include "gdt.h" 
+#include "gdt.h"
+#include "vga.h"
 static Task tasks[MAX_TASKS];
 static int task_count=0;
 static int current_task=0;
@@ -74,6 +75,7 @@ void schedule(){
 	int next = -1;
 	for(int i=1;i<=task_count;i++){
 		int candidate = (current_task+i)%task_count;
+		if(candidate==current_task)continue;
 		if(tasks[candidate].state==TASK_READY ||
 				tasks[candidate].state==TASK_RUNNING){
 			next=candidate;
@@ -82,7 +84,8 @@ void schedule(){
 	}
 	if(next==-1||next==current_task) return;
 	int prev=current_task;
-	tasks[prev].state=TASK_READY;
+	if(tasks[prev].state==TASK_RUNNING)
+        tasks[prev].state=TASK_READY; 
 	tasks[next].state=TASK_RUNNING;
 	current_task=next;
 	if(tasks[next].stack != 0) {
@@ -133,9 +136,10 @@ int task_create_user(const char* name,uint32_t entry,uint32_t page_dir){
 	return id;
 }
 void task_exit(){
-	tasks[current_task].state=TASK_DEAD;
+	int id=current_task;
+	tasks[id].state=TASK_DEAD;
 	schedule();
-	for(;;);
+	while(1) asm volatile("hlt");
 }
 int get_current_task_id(){
 	return current_task;

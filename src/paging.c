@@ -94,7 +94,7 @@ void paging_free_dir(uint32_t dir_phys){
 					pmm_free(pt[j]&~0xFFF);
 				}
 			}
-			pmm_free(dir_phys);
+			pmm_free(pt_phys);
 		}
 	}
 	pmm_free(dir_phys);

@@ -4,6 +4,7 @@
 #include "vga.h"
 #include "stdlib/stdio.h"
 #include "task.h"
+#include "keyboard.h"
 // sys_write - print string from user space
 // ebx - pointer of string, ecx - length
 static void sys_write(struct InterruptRegisters* regs){
@@ -29,6 +30,7 @@ static void sys_exit(struct InterruptRegisters* regs){
 	uint32_t code=regs->ebx;
 	printf("\n[task existed with code%d]\n", code);
 	print("csh>");
+	setLineStart();
 	task_exit();
 }
 static void sys_getpid(struct InterruptRegisters* regs){
