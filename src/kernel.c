@@ -14,6 +14,7 @@
 #include "syscall.h"
 #include "ata.h"
 #include "fat12_ata.h"
+#include "vga_font.h"
 void kmain(MultibootInfo* mbi);
 static uint8_t diag_sector[512];
 void set_screen_color(uint8_t color);
@@ -81,6 +82,7 @@ void kmain(MultibootInfo* mbi) {
     }
   print("csh>"); 
   setLineStart();
+  vga_load_font(custom_font);
   set_screen_color(0x0F);
   for(;;);
 }

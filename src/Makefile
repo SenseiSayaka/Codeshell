@@ -23,6 +23,8 @@ all:
 	gcc -m32 -fno-stack-protector -fno-builtin -c elf.c     -o build/elf.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c ata.c     -o build/ata.o
 	gcc -m32 -fno-stack-protector -fno-builtin -c fat12_ata.c -o build/fat12_ata.o
+	gcc -m32 -fno-stack-protector -fno-builtin -c vga_font.c -o build/vga_font.o
+	gcc -m32 -fno-stack-protector -fno-builtin -c vga_font_data.c -o build/vga_font_data.o
 	### user programs ###
 	nasm -f elf32 programs/crt0.s -o build/crt0.o
 	gcc -m32 -fno-stack-protector -fno-builtin -nostdlib -nostdinc \
@@ -41,16 +43,23 @@ all:
 	    build/util.o build/idt.o build/idts.o build/timer.o build/keyboard.o \
 	    build/stdio.o build/shell.o build/kmalloc.o build/fat12.o \
 	    build/task.o build/taskc.o build/pmm.o build/paging.o build/syscall.o build/elf.o build/ata.o \
-	    build/fat12_ata.o
+	    build/fat12_ata.o build/vga_font.o build/vga_font_data.o
 	mv kernel codeshell/boot/kernel
 	### ATA disk image ###
-	dd if=/dev/zero of=build/disk.img bs=512 count=204800  # 100MB
-	mkfs.fat -F 12 build/disk.img
-	mcopy -i build/disk.img fs/motd.txt   ::MOTD.TXT
-	mcopy -i build/disk.img build/hello.elf ::HELLO.ELF
+	[ -f build/disk.img ] || ( \
+	    dd if=/dev/zero of=build/disk.img bs=512 count=204800 && \
+	    mkfs.fat -F 12 build/disk.img && \
+	    mcopy -i build/disk.img fs/motd.txt   ::MOTD.TXT && \
+	    mcopy -i build/disk.img build/hello.elf ::HELLO.ELF \
+	)
 	### run ###
 	grub-mkrescue -o build/codeshell.iso codeshell/
 	qemu-system-i386 build/codeshell.iso -drive file=build/disk.img,format=raw,if=ide,index=2
-
 clear:
 	rm -f build/*.o build/*.elf build/codeshell.iso build/fs.img
+diskreset:
+	rm -f build/disk.img
+	dd if=/dev/zero of=build/disk.img bs=512 count=204800
+	mkfs.fat -F 12 build/disk.img
+	mcopy -i build/disk.img fs/motd.txt   ::MOTD.TXT
+	mcopy -i build/disk.img build/hello.elf ::HELLO.ELF

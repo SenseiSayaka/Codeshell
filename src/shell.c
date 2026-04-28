@@ -23,6 +23,9 @@ static const char* help_text =
 	"  cat           - reading and print content of file\n"
 	"  run           - run ELF binary program\n"
 	"  diskinfo	    - debug informations of current disks\n"
+	"  exit          - logout from Codeshell\n"
+	"  write         - write a data into file\n"
+	"  rm            - delete file\n"
 	"  --------------------------------------------------------------\n";
 
 static const char* skip_spaces(const char* s)
@@ -64,6 +67,43 @@ void shell_exec(const char* input)
 	}else if(k_strncmp(input,"diskinfo",cmd_len)==0&&cmd_len==8){
 		printf("\ndisk sectors: %d\n", ata_sector_count());
 		printf("disk size: %d MB\n", ata_sector_count()/2048);
+	}else if(k_strncmp(input,"exit",cmd_len)==0&&cmd_len==4){
+		print("\nshutting down...\n");
+		//QEMU shutdown port
+		outPortB(0x604,0x00);
+		outPortB(0x605,0x20);
+	}else if(k_strncmp(input,"rm",cmd_len)==0&&cmd_len==2){
+		const char* filename=skip_spaces(input+2);
+		if(*filename=='\0'){
+			print("\nusage: rm FILENAME\n");
+		}else{
+			if(fat12_ata_delete(filename)==0){
+				printf("\nfile %s deleted\n",filename);
+			}else{
+				print("\nfile not found\n");
+			}
+		}
+	}else if(k_strncmp(input,"write",5)==0&&cmd_len==5){
+		//format: write FILENAME text
+		const char* rest=skip_spaces(input+5);
+		if(*rest=='\0'){
+			print("\nusage: write FILENAME text\n");
+		}else{
+			char filename[16];
+			int i=0;
+			while(*rest&&*rest!=' '&&i<15){
+				filename[i++]=*rest++;
+			}
+			filename[i]='\0';
+			rest=skip_spaces(rest);
+			uint32_t len=k_strlen(rest);
+			print("\n");
+			if(fat12_ata_create(filename,(const uint8_t*)rest,len)==0){
+				printf("file %s created (%d bytes)\n", filename,len);
+			}else{
+				print("write failed\n");
+			}
+		}
 	}
 	else if(k_strncmp(input, "pageinfo", cmd_len)==0&&cmd_len==8){
 		printf("\npages used: %d (%d KB)\n",
