@@ -10,6 +10,7 @@
 #include "elf.h"
 #include "ata.h"
 #include "fat12_ata.h"
+#include "timer.h"
 static const char* help_text =
 	"Commands:\n"
 	"  ---------------------------------------------------------------\n"
@@ -26,6 +27,8 @@ static const char* help_text =
 	"  exit          - logout from Codeshell\n"
 	"  write         - write a data into file\n"
 	"  rm            - delete file\n"
+	"  uptime        - show system uptime\n"
+	"  ps            = show current tasks state\n"
 	"  --------------------------------------------------------------\n";
 
 static const char* skip_spaces(const char* s)
@@ -57,10 +60,32 @@ void shell_exec(const char* input)
 	{
 		print("\n");
 		print(help_text);
+	}else if(k_strncmp(input,"uptime",cmd_len)==0&&cmd_len==6){
+		uint32_t t=get_timer_ticks();
+		uint32_t seconds=t/100;
+		uint32_t minutes=seconds/60;
+		uint32_t hours=minutes/60;
+		printf("\nuptime: %d:%d:%d (%d ticks)\n",hours,minutes%60,seconds%60,t);
 	}
 	else if (k_strncmp(input, "clr", cmd_len) == 0 && cmd_len == 3)
 	{
 		Reset();
+	}else if(k_strncmp(input,"ps",cmd_len)==0&&cmd_len==2){
+		print("\n  PID  STATE     NAME\n");
+		print(  "  ---  --------  --------\n");
+		int count=task_get_count();
+		for(int i=0;i<count;i++){
+			char name[32];
+			uint8_t state;
+			task_get_info(i,name,&state);
+			const char* state_str="?";
+			switch(state){
+				case 0:state_str="RUNNING";break;
+				case 1:state_str="READY  ";break;
+				case 2:state_str="DEAD   ";break;
+				case 3:state_str="BLOCKED";break;
+			}printf("  %d    %s  %s\n",i,state_str,name);
+		}
 	}
 	else if (k_strncmp(input, "fsinfo", cmd_len) == 0 && cmd_len == 6) {
 	    fat12_dump_bpb();
@@ -135,16 +160,41 @@ void shell_exec(const char* input)
 	            k_free(buf);
 	        }
 	    }
-	}else if (k_strncmp(input, "ls", cmd_len) == 0 && cmd_len == 2) {
+	}else if (k_strncmp(input,"ls",cmd_len)==0&&cmd_len==2) {
 	    char names[64][13];
 	    uint32_t sizes[64];
-	    int count = fat12_ata_ls(names, sizes, 64);
-	    if (count < 0) {
-	        print("\nfs not ready\n");
+	    int count=fat12_ata_ls(names,sizes,64);
+	    if (count<0) {
+	        print_color("\nfs not ready\n",COLOR8_LIGHT_RED,COLOR8_BLACK);
 	    } else {
 	        print("\n");
-	        for (int i = 0; i < count; i++) {
-	            printf("  %s  (%d bytes)\n", names[i], sizes[i]);
+	        for (int i = 0;i<count;i++) {
+	            const char* name=names[i];
+	            int len=0;
+	            while (name[len])len++;
+	            uint8_t color=COLOR8_WHITE;
+	            if (len>4&&name[len-4]=='.'&& 
+	                name[len-3]=='E'&&name[len-2]=='L'&&name[len-1]=='F') {
+	                color=COLOR8_LIGHT_GREEN;
+	            }
+	            else if (len>4&&name[len-4]=='.'&&
+	                     name[len-3]=='T'&&name[len-2]=='X'&&name[len-1]=='T') {
+	                color=COLOR8_LIGHT_CYAN;
+	            }
+	            print("  ");
+	            print_color(name,color,COLOR8_BLACK);
+	            char buf[32];
+	            int j=0;
+	            buf[j++]=' ';buf[j++]=' ';
+	            buf[j++]='(';
+	            uint32_t s=sizes[i];
+	            char numbuf[16];int ni=0;
+	            if (s == 0)numbuf[ni++]='0';
+	            while (s>0) { numbuf[ni++]='0'+(s % 10);s/= 10; }
+	            while (--ni >= 0)buf[j++]=numbuf[ni];
+	            buf[j++] = ' ';buf[j++] = 'b'; buf[j++] = ')';
+	            buf[j++] = '\n';buf[j] = '\0';
+	            print_color(buf,COLOR8_DARK_GREY,COLOR8_BLACK);
 	        }
 	    }
 	}else if (k_strncmp(input, "cat", 3) == 0 && cmd_len >= 3) {

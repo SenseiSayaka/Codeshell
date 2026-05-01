@@ -119,3 +119,15 @@ void print(const char* s){
     }
     updateHardwareCursor();
 }
+void set_color(uint8_t fg,uint8_t bg){
+	currentColor=((bg<<4)|(fg&0x0F)<<8);
+}
+void reset_color(){
+	currentColor=defaultColor;
+}
+void print_color(const char* s, uint8_t fg,uint8_t bg){
+	uint16_t saved=currentColor;
+	currentColor=((bg<<4)|(fg&0x0F)<<8);
+	print(s);
+	currentColor=saved;
+}

@@ -31,11 +31,16 @@ all:
 	    -ffreestanding -O2 -c programs/hello.c -o build/hello.o
 	ld -m elf_i386 -T programs/linker.ld -o build/hello.elf \
 	    build/crt0.o build/hello.o
+	gcc -m32 -fno-stack-protector -fno-builtin -nostdlib -nostdinc\
+		-ffreestanding -O2 -c programs/guess.c -o build/guess.o
+	ld -m elf_i386 -T programs/linker.ld -o build/guess.elf\
+		build/crt0.o build/guess.o
 	### filesystem image ###
 	dd if=/dev/zero of=build/fs.img bs=512 count=2880
 	mkfs.fat -F 12 build/fs.img
 	mcopy -i build/fs.img fs/motd.txt  ::MOTD.TXT
 	mcopy -i build/fs.img build/hello.elf ::HELLO.ELF
+	mcopy -i build/disk.img build/guess.elf ::GUESS.ELF
 	cp build/fs.img codeshell/boot/fs.img
 	### link and run ###
 	ld -m elf_i386 -T linker.ld -o kernel \

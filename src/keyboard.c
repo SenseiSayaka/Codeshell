@@ -10,7 +10,11 @@
 bool capsOn;
 bool capsLock;
 static bool extendedKey = false;
-
+static int reader_task=-1; //id of blocked task
+static char* reader_buf=0;
+static uint32_t reader_max=0;
+static uint32_t reader_len=0;
+static char reader_buffer[512];
 // --- buffer of the current input  ---
 #define INPUT_BUF_SIZE 256
 static char     inputBuf[INPUT_BUF_SIZE];
@@ -94,7 +98,8 @@ static void load_history_entry(const char* entry)
 }
 static const char* commands[] = {
     "info", "clr", "echo", "meminfo", "fsinfo",
-    "pageinfo", "diskinfo", "ls", "cat", "run", 0
+    "pageinfo", "diskinfo", "ls", "cat", "run",
+    "exit", "write", "rm", "ps", "uptime", 0
 };
 static int find_completions(const char* prefix, uint32_t prefix_len,
 		char matches[][64], int max_matches){
@@ -187,9 +192,23 @@ static void handle_tab(){
 		setCursorPos(c, ln);
 	}
 }
-
+int kbd_read_line(char* buf,uint32_t max_len){
+	extern int get_current_task_id();
+	reader_task=get_current_task_id();
+	reader_max=max_len;
+	reader_len=0;
+	//block current task while don't receive ENTER
+	extern void task_block(int id);
+	task_block(reader_task);
+	uint32_t copied=0;
+	while(copied<reader_len&&copied<max_len-1){
+		buf[copied]=reader_buffer[copied];
+		copied++;
+	}buf[copied]='\0';
+	reader_task=-1;
+	return (int)copied;
+}
 // --- scancodes / keymaps ---
-
 const uint32_t UNKNOWN = 0xFFFFFFFF;
 const uint32_t ESC     = 0xFFFFFFFF - 1;
 const uint32_t CTRL    = 0xFFFFFFFF - 2;
@@ -341,6 +360,15 @@ void keyboardHandler(struct InterruptRegisters *regs){
 		    break;
 	    }
             if (key == '\n') {
+		//if is there program waiting for input-give it
+		if(reader_task>=0){
+			reader_buffer[reader_len]='\0';
+			extern void task_unblock(int id);
+			task_unblock(reader_task);
+			reader_task=-1;
+			print("\n");
+			return;
+		}
                 // drop buffer and print new prompt
                 inputBuf[inputLen] = '\0';
                 history_push(inputBuf);
@@ -362,6 +390,12 @@ void keyboardHandler(struct InterruptRegisters *regs){
                 setLineStart();
 
             } else if (key == '\b') {
+		    if(reader_task>=0){
+			    if(reader_len>0){
+				    reader_len--;
+				    print("\b");
+			    }return;
+		    }
                 // backspace — delete char right 
                 if (inputPos > 0) {
                     for (uint16_t i = inputPos - 1; i < inputLen - 1; i++)
@@ -374,7 +408,13 @@ void keyboardHandler(struct InterruptRegisters *regs){
                 }
 
             } else if (key != UNKNOWN && key <= 0x7F) {
-                
+		    if(reader_task>=0){
+			    if(reader_len<sizeof(reader_buffer)-1){
+				    reader_buffer[reader_len++]=(char)key;
+				    char b[2]={(char)key,0};
+				    print(b);
+			    }return;
+		    }
                 if (inputLen < INPUT_BUF_SIZE - 1) {
                     for (uint16_t i = inputLen; i > inputPos; i--)
                         inputBuf[i] = inputBuf[i - 1];

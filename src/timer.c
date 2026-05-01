@@ -24,3 +24,6 @@ void initTimer(){
     outPortB(0x40,(uint8_t)(divisor & 0xFF));
     outPortB(0x40,(uint8_t)((divisor >> 8) & 0xFF));
 }
+uint32_t get_timer_ticks(){
+	return (uint32_t)ticks;
+}

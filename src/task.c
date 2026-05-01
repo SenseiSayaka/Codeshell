@@ -144,4 +144,29 @@ void task_exit(){
 int get_current_task_id(){
 	return current_task;
 }
-
+void task_block(int task_id){
+	if(task_id<0||task_id>=task_count)return;
+	tasks[task_id].state=TASK_BLOCKED;
+	if(task_id==current_task){
+		schedule();
+	}
+}
+void task_unblock(int task_id){
+	if(task_id<0||task_id>=task_count)return;
+	if(tasks[task_id].state==TASK_BLOCKED){
+		tasks[task_id].state=TASK_READY;
+	}
+}
+int task_get_count(){
+	return task_count;
+}
+int task_get_info(int idx, char* name_out, uint8_t* state_out){
+	if(idx<0||idx>=task_count)return -1;
+	int i=0;
+	while(tasks[idx].name[i]&&i<31){
+		name_out[i]=tasks[idx].name[i];
+		i++;
+	}name_out[i]='\0';
+	*state_out=tasks[idx].state;
+	return 0;
+}

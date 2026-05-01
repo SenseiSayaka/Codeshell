@@ -5,6 +5,7 @@
 #include "stdlib/stdio.h"
 #include "task.h"
 #include "keyboard.h"
+#include "timer.h"
 // sys_write - print string from user space
 // ebx - pointer of string, ecx - length
 static void sys_write(struct InterruptRegisters* regs){
@@ -37,12 +38,29 @@ static void sys_getpid(struct InterruptRegisters* regs){
 	extern int get_current_task_id();
 	regs->eax=get_current_task_id();
 }
+static void sys_read(struct InterruptRegisters* regs){
+	char* buf=(char*)regs->ebx;
+	uint32_t max=regs->ecx;
+	//defend user-space
+	if((uint32_t)buf<0x1000||(uint32_t)buf>=0xC0000000){
+		regs->eax=-1;
+		return;
+	}
+	if(max==0){regs->eax=0;return;}
+	int n=kbd_read_line(buf,max); 
+	regs->eax=n;
+}
+static void sys_gettime(struct InterruptRegisters* regs){
+	regs->eax=get_timer_ticks();
+}
 // main handler
 void syscall_handler(struct InterruptRegisters* regs){
 	switch(regs->eax){
 		case SYS_EXIT:sys_exit(regs);break;
 		case SYS_WRITE:sys_write(regs);break;
 		case SYS_GETPID:sys_getpid(regs);break;
+		case SYS_READ:sys_read(regs);break;
+		case SYS_GETTIME:sys_gettime(regs);break;
 		default:
 			printf("[syscall] unknown: %d\n", regs->eax);
 			regs->eax=-1;
