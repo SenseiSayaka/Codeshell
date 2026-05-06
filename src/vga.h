@@ -36,3 +36,4 @@ void moveCursorRight();
 void putCharAt(char c, uint16_t col, uint16_t ln);  // записать символ без сдвига курсора
 void setCursorPos(uint16_t col, uint16_t ln);        // установить позицию курсора;
 void updateHardwareCursor();
+void setCursorShape(uint8_t start,uint8_t cmd);

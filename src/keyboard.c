@@ -9,6 +9,7 @@
 #include "fat12.h"
 bool capsOn;
 bool capsLock;
+static bool ctrlOn=false;
 static bool extendedKey = false;
 static int reader_task=-1; //id of blocked task
 static char* reader_buf=0;
@@ -55,6 +56,15 @@ static void redrawFrom(uint16_t from) {
     bufToScreen(inputLen, &col, &ln);
     putCharAt(' ', col, ln);
 }
+static void clearInputOnScreen(){
+	uint16_t col, ln;
+	for(uint16_t i=0;i<inputLen;i++){
+		bufToScreen(i,&col,&ln);
+		putCharAt(' ',col,ln);
+	}
+	bufToScreen(0,&col,&ln);
+	setCursorPos(col,ln);
+}
 static void history_push(const char* cmd)
 {
 	if(!cmd || cmd[0] == '\0') return;
@@ -99,7 +109,8 @@ static void load_history_entry(const char* entry)
 static const char* commands[] = {
     "info", "clr", "echo", "meminfo", "fsinfo",
     "pageinfo", "diskinfo", "ls", "cat", "run",
-    "exit", "write", "rm", "ps", "uptime", 0
+    "exit", "write", "rm", "ps", "uptime","date",
+    "reboot","hexdump","rn", 0
 };
 static int find_completions(const char* prefix, uint32_t prefix_len,
 		char matches[][64], int max_matches){
@@ -134,13 +145,31 @@ static int find_completions(const char* prefix, uint32_t prefix_len,
 	}
 	return count;
 }
-
+static int cmd_takes_file(const char* cmd){
+	const char* file_cmds[]={ "cat","run","rm","hexdump","rename",0 };
+	for(int i=0;file_cmds[i];i++)
+		if(k_strcmp(file_cmds[i],cmd)==0)return 1;
+	return 0;
+}
 static void handle_tab(){
 	if (inputLen == 0) return;
-
+	//find beginning of current word and name of command
 	int word_start = 0;
+	int cmd_end=-1;
 	for (int i = 0; i < (int)inputPos; i++){
-		if(inputBuf[i] == ' ') word_start = i + 1;
+		if(inputBuf[i] == ' '){ 
+			if(cmd_end<0)
+				cmd_end=i;
+			word_start = i + 1;
+		}
+	}int files_only=0;
+	if(cmd_end>=0){
+		char cmd_name[32]={0};
+		int n=cmd_end<31?cmd_end:31;
+		for(int i=0;i<n;i++)cmd_name[i]=inputBuf[i];
+		cmd_name[n]='\0';
+		files_only=cmd_takes_file(cmd_name)?1:2;
+		if(files_only==2)return;
 	}
 	uint32_t prefix_len = inputPos - word_start;
 	char prefix[INPUT_BUF_SIZE];
@@ -321,6 +350,26 @@ void keyboardHandler(struct InterruptRegisters *regs){
 					load_history_entry(history[history_pos % HISTORY_SIZE]);
 				}
 				return;
+			case 0x47://home
+				inputPos=0;
+				bufToScreen(0,&col,&ln);
+				setCursorPos(col,ln);
+				return;
+			case 0x4F://end
+				inputPos=inputLen;
+				bufToScreen(inputLen,&col,&ln);
+				setCursorPos(col,ln);
+				return;
+			case 0x53://delete
+				if(inputPos<inputLen){
+					for(uint16_t i=inputPos;i<inputLen-1;i++)
+						inputBuf[i]=inputBuf[i+1];
+					inputLen--;
+					redrawFrom(inputPos);
+					bufToScreen(inputPos,&col,&ln);
+					setCursorPos(col,ln);
+				}
+				return;
 			case 0x50:
 			    if (history_pos == -1) return;
 
@@ -340,15 +389,20 @@ void keyboardHandler(struct InterruptRegisters *regs){
 
     switch (scanCode) {
         case 1:
-        case 29:
         case 56:
         case 59: case 60: case 61: case 62: case 63:
         case 64: case 65: case 66: case 67: case 68:
         case 87: case 88:
             break;
+	case 29:
+	    ctrlOn=(press==0);
+	    break;
         case 42:
             capsOn = (press == 0);
             break;
+	case 54:
+	    capsOn=(press==0);
+	    break;
         case 58:
             if (press == 0) capsLock = !capsLock;
             break;
@@ -358,6 +412,48 @@ void keyboardHandler(struct InterruptRegisters *regs){
 	    if(key=='\t'){
 		    handle_tab();
 		    break;
+	    }
+	    if(ctrlOn){
+		    char lk=(key>='A'&&key<='Z')?key+32:key;
+		    if(lk=='c'){//cancel input
+			    clearInputOnScreen();
+			    inputLen=0;
+			    inputPos=0;
+			    print("^C\ncsh>");
+			    setLineStart();
+			    return;
+
+		    }if(lk=='l'){//clear the screen
+			    extern void Reset();
+			    Reset();
+			    print("csh>");
+			    setLineStart();
+			    inputBuf[inputLen]='\0';
+			    redrawFrom(0);
+			    bufToScreen(inputPos,&col,&ln);
+			    setCursorPos(col,ln);
+			    return;
+		    }if(lk=='u'){//clear entire line
+			    clearInputOnScreen();
+			    inputLen=0;
+			    inputPos=0;
+			    return;
+		    }if(lk=='w'){//clear word before cursor
+			    if(inputPos==0)return;
+		    	    uint16_t new_pos=inputPos;
+			    while(new_pos>0&&inputBuf[new_pos-1]==' ')new_pos--;
+			    while(new_pos>0&&inputBuf[new_pos-1]!=' ')new_pos--;
+			    uint16_t del_count=inputPos-new_pos;
+			    for(uint16_t i=new_pos;i<inputLen-del_count;i++)
+				inputBuf[i]=inputBuf[i+del_count];
+			    inputLen -=del_count;
+			    inputPos=new_pos;
+		            redrawFrom(inputPos);
+			    bufToScreen(inputPos,&col,&ln);
+			    setCursorPos(col,ln);
+			    return;	    
+		    }break;
+
 	    }
             if (key == '\n') {
 		//if is there program waiting for input-give it
@@ -379,15 +475,9 @@ void keyboardHandler(struct InterruptRegisters *regs){
 		
 		inputLen = 0;
                 inputPos = 0;
-              	if(is_clear)
-		{
-			print("csh>");
-		}
-		else
-		{
-			print("csh>");
-		}
-                setLineStart();
+		{extern uint16_t column;if(column!=0)print("\n");}
+              	print("csh>");
+		setLineStart();
 
             } else if (key == '\b') {
 		    if(reader_task>=0){

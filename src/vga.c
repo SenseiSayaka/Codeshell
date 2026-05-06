@@ -23,7 +23,12 @@ void updateHardwareCursor() {
     outPortB(0x3D4, 0x0E);
     outPortB(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
 }
-
+void setCursorShape(uint8_t start,uint8_t end){
+	outPortB(0x3D4,0x0A);
+	outPortB(0x3D5,start);
+	outPortB(0x3D4,0x0B);
+	outPortB(0x3D5,end);
+}
 void moveCursorLeft() {
     if (column > 0) {
         column--;
@@ -88,10 +93,6 @@ void print(const char* s){
                 column = 0;
                 break;
             case '\b':
-                if(column == 4) {
-                    vga[line * width + (++column)] = ' ' | currentColor;
-                    break;
-                }
                 if (column == 0 && line != 0){
                     line--;
                     column = width;
